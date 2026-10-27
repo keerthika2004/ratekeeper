@@ -1,128 +1,60 @@
 # Local stack: Redis + Postgres + a one-off migration step + two app instances.
-
 #
-
 #   docker compose up -d redis postgres     # just the databases (run the app with uv)
-
 #   docker compose up --build -d            # everything
-
 #
-
 # Two app instances on different ports show that the limit is global:
-
 # requests spread across 8001 and 8002 share one quota, because the state
-
 # lives in Redis, not in either process.
-
 #
-
 # The passwords below are throwaway local-development values, not secrets.
 
-
- 
-
 x-app-env: &app-env
-
   RATEKEEPER_REDIS_URL: redis://redis:6379/0
-
   RATEKEEPER_DATABASE_URL: postgresql+asyncpg://ratekeeper:ratekeeper-local-dev@postgres:5432/ratekeeper
 
-
- 
-
 services:
-
   redis:
-
     image: redis:7.4-alpine
-
     # No persistence: counters are short-lived by nature, and losing them in a
-
     # restart only means limits reset early. Policies live in Postgres.
-
     command: ["redis-server", "--save", "", "--appendonly", "no"]
-
     ports: ["6379:6379"]
-
     healthcheck:
-
       test: ["CMD", "redis-cli", "ping"]
-
       interval: 2s
-
       retries: 15
-
-
- 
 
   postgres:
-
     image: postgres:16-alpine
-
     environment:
-
       POSTGRES_DB: ratekeeper
-
       POSTGRES_USER: ratekeeper
-
       POSTGRES_PASSWORD: ratekeeper-local-dev
-
     ports: ["5432:5432"]
-
     healthcheck:
-
       test: ["CMD", "pg_isready", "-U", "ratekeeper"]
-
       interval: 2s
-
       retries: 15
 
-
- 
-
   # Runs the database migrations once, then exits. The apps start only after
-
   # it succeeds, so no app ever sees an outdated schema, and app instances
-
   # never race each other to migrate.
-
   migrate:
-
     build: .
-
     command: ["alembic", "upgrade", "head"]
-
     environment: *app-env
-
     depends_on:
-
       postgres: { condition: service_healthy }
 
-
- 
-
   app1: &app
-
     build: .
-
     environment: *app-env
-
     depends_on:
-
       redis: { condition: service_healthy }
-
       migrate: { condition: service_completed_successfully }
-
     ports: ["8001:8000"]
 
-
- 
-
   app2:
-
     <<: *app
-
     ports: ["8002:8000"]
-
-
- 
