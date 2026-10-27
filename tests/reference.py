@@ -22,12 +22,14 @@ from ratekeeper.core.rules import gcra_interval
 
 Clock = Callable[[], int]
 
+
 @dataclass(frozen=True, slots=True)
 class _BandEval:
     """One band's evaluation, before deciding whether to charge it."""
 
     allowed: bool
     finish: Callable[[bool], BandResult]  # charge the band if True, then report its state
+
 
 class ReferenceRateLimiter:
     def __init__(self, clock: Clock) -> None:
@@ -173,6 +175,7 @@ class ReferenceRateLimiter:
             return BandResult(allowed, burst, remaining, ahead, retry_after)
 
         return _BandEval(allowed, finish)
+
 
 class AsyncReferenceLimiter:
     """The reference model behind the async RateLimiter interface, for service tests."""

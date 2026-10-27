@@ -17,6 +17,7 @@ from urllib.parse import quote
 
 from ratekeeper.core.models import Algorithm, Policy
 
+
 def redis_keys(policy: Policy, identity: str) -> list[str]:
     prefix = f"rk:{{{policy.name}:{quote(identity, safe='')}}}:v{policy.version}:b"
     keys: list[str] = []

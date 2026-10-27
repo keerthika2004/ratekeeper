@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+
 class Algorithm(StrEnum):
     """See docs/ALGORITHMS.md for how each one works and when to pick it."""
 
@@ -31,6 +32,7 @@ class Algorithm(StrEnum):
     def keys_per_band(self) -> int:
         return 2 if self is Algorithm.SLIDING_WINDOW_LOG else 1
 
+
 class FailureMode(StrEnum):
     """What a check returns when Redis can't answer. Chosen per policy."""
 
@@ -38,6 +40,7 @@ class FailureMode(StrEnum):
     """Allow. For limits where availability matters more (e.g. reading product pages)."""
     CLOSED = "CLOSED"
     """Reject. For limits guarding something costly or abusable (e.g. login, sending SMS)."""
+
 
 @dataclass(frozen=True, slots=True)
 class Band:
@@ -55,6 +58,7 @@ class Band:
     def window_us(self) -> int:
         return self.window_ms * 1000
 
+
 @dataclass(frozen=True, slots=True)
 class PolicySpec:
     """The editable part of a policy: everything except name and version."""
@@ -62,6 +66,7 @@ class PolicySpec:
     algorithm: Algorithm
     failure_mode: FailureMode
     bands: tuple[Band, ...]
+
 
 @dataclass(frozen=True, slots=True)
 class Policy:
@@ -100,6 +105,7 @@ class Policy:
         """Largest cost a single request may have; anything above could never be admitted."""
         return min(self.capacity(band) for band in self.bands)
 
+
 @dataclass(frozen=True, slots=True)
 class BandResult:
     """The outcome of one band for one check.
@@ -116,6 +122,7 @@ class BandResult:
     remaining: int
     reset_after_us: int
     retry_after_us: int
+
 
 @dataclass(frozen=True, slots=True)
 class Decision:

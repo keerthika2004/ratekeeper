@@ -27,8 +27,10 @@ from ratekeeper.metrics import Metrics
 
 log = logging.getLogger(__name__)
 
+
 class PolicyLookup(Protocol):
     async def get(self, name: str) -> Policy | None: ...
+
 
 @dataclass(frozen=True, slots=True)
 class CheckResult:
@@ -43,11 +45,13 @@ class CheckResult:
     def degraded(self) -> bool:
         return self.decision is None
 
+
 def is_redis_outage(error: BaseException) -> bool:
     """Redis is unreachable or too slow. Deliberately NOT every Redis error: a
     script error (ResponseError) is a bug in our code, and hiding it behind a
     failure mode would make it look like an outage instead of failing loudly."""
     return isinstance(error, RedisConnectionError | RedisTimeoutError | TimeoutError | OSError)
+
 
 class CheckService:
     def __init__(

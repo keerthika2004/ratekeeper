@@ -13,12 +13,15 @@ from tests.support import ManualClock, make_policy
 MS = 1_000
 SECOND = 1_000_000
 
+
 def admitted(limiter: ReferenceRateLimiter, policy: Policy, attempts: int) -> int:
     return sum(limiter.check(policy, "user", 1).allowed for _ in range(attempts))
+
 
 def setup() -> tuple[ManualClock, ReferenceRateLimiter]:
     clock = ManualClock()  # starts exactly on a whole second
     return clock, ReferenceRateLimiter(clock)
+
 
 def test_fixed_window_lets_twice_the_limit_through_across_a_boundary() -> None:
     clock, limiter = setup()
@@ -28,6 +31,7 @@ def test_fixed_window_lets_twice_the_limit_through_across_a_boundary() -> None:
     assert admitted(limiter, five_per_second, 5) == 5
     clock.advance(1 * MS)  # first millisecond of window 1
     assert admitted(limiter, five_per_second, 5) == 5  # 10 requests within 1 ms
+
 
 def test_sliding_log_closes_that_gap_and_knows_the_exact_wait() -> None:
     clock, limiter = setup()
@@ -42,6 +46,7 @@ def test_sliding_log_closes_that_gap_and_knows_the_exact_wait() -> None:
     # The oldest entry (t = 999 ms) leaves the window at t = 1999 ms, 999 ms from now.
     assert rejected.retry_after_us == 999 * MS
 
+
 def test_sliding_counter_weighs_the_previous_window_by_time_left() -> None:
     clock, limiter = setup()
     ten_per_second = make_policy(Algorithm.SLIDING_WINDOW_COUNTER, Band(10, 1_000))
@@ -50,6 +55,7 @@ def test_sliding_counter_weighs_the_previous_window_by_time_left() -> None:
     clock.advance(1_500 * MS)  # halfway through window 1
     # Estimate = 10 * (500 ms left / 1000 ms) + current = 5 + current, so 5 more fit.
     assert admitted(limiter, ten_per_second, 10) == 5
+
 
 def test_gcra_allows_the_burst_at_once_then_paces_evenly() -> None:
     clock, limiter = setup()
@@ -63,6 +69,7 @@ def test_gcra_allows_the_burst_at_once_then_paces_evenly() -> None:
 
     clock.advance(100 * MS)
     assert admitted(limiter, paced, 2) == 1  # exactly one unit refilled
+
 
 def test_bands_are_all_or_nothing() -> None:
     clock, limiter = setup()
@@ -79,6 +86,7 @@ def test_bands_are_all_or_nothing() -> None:
     assert rejected.bands[0].remaining == 1  # ...and was NOT charged
     assert not rejected.bands[1].allowed
 
+
 def test_cost_consumes_several_units_at_once() -> None:
     _, limiter = setup()
     ten_per_second = make_policy(Algorithm.SLIDING_WINDOW_LOG, Band(10, 1_000))
@@ -87,6 +95,7 @@ def test_cost_consumes_several_units_at_once() -> None:
     assert limiter.check(ten_per_second, "user", 4).bands[0].remaining == 2
     assert not limiter.check(ten_per_second, "user", 3).allowed
     assert limiter.check(ten_per_second, "user", 2).allowed
+
 
 def test_identities_are_independent() -> None:
     _, limiter = setup()

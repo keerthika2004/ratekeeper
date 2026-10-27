@@ -24,6 +24,7 @@ from ratekeeper.policies.service import PolicyService
 
 router = APIRouter(prefix="/v1")
 
+
 @dataclass(frozen=True, slots=True)
 class Services:
     """Built once at startup (see main.py) and stored on app.state."""
@@ -31,18 +32,22 @@ class Services:
     check: CheckService
     policies: PolicyService
 
+
 def _services(request: Request) -> Services:
     services: Services = request.app.state.services
     return services
 
+
 ServicesDep = Annotated[Services, Depends(_services)]
 IfMatch = Annotated[str | None, Header(alias="If-Match")]
+
 
 @router.post("/check")
 async def check(body: CheckIn, response: Response, services: ServicesDep) -> CheckOut:
     result = await services.check.check(body.policy, body.identity, body.cost)
     response.headers.update(_rate_limit_headers(result))
     return CheckOut.of(result)
+
 
 @router.put("/policies/{name}")
 async def put_policy(
@@ -58,19 +63,23 @@ async def put_policy(
     response.headers["ETag"] = f'"{result.policy.version}"'
     return PolicyOut.of(result.policy)
 
+
 @router.get("/policies/{name}")
 async def get_policy(name: str, response: Response, services: ServicesDep) -> PolicyOut:
     policy = await services.policies.get(name)
     response.headers["ETag"] = f'"{policy.version}"'
     return PolicyOut.of(policy)
 
+
 @router.get("/policies")
 async def list_policies(services: ServicesDep) -> list[PolicyOut]:
     return [PolicyOut.of(policy) for policy in await services.policies.list_all()]
 
+
 @router.delete("/policies/{name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_policy(name: str, services: ServicesDep, if_match: IfMatch = None) -> None:
     await services.policies.delete(name, _parse_if_match(if_match))
+
 
 @router.get("/policies/{name}/history")
 async def policy_history(
@@ -78,6 +87,7 @@ async def policy_history(
 ) -> list[HistoryOut]:
     """Every change, most recent first, including deletions."""
     return [HistoryOut.of(entry) for entry in await services.policies.history(name, limit)]
+
 
 def _rate_limit_headers(result: CheckResult) -> dict[str, str]:
     if result.decision is None:
@@ -95,6 +105,7 @@ def _rate_limit_headers(result: CheckResult) -> dict[str, str]:
         # Retry-After only supports whole seconds; round up so clients are never early.
         headers["Retry-After"] = str(max(1, ceil_div(result.decision.retry_after_us, 1_000_000)))
     return headers
+
 
 def _parse_if_match(header: str | None) -> int | None:
     """Accepts "3", W/"3" or 3."""

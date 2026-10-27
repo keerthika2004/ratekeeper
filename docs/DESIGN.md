@@ -91,9 +91,9 @@ decide, write state) with nothing else in between.
 **Why:** the classic bug is *check-then-act*:
 
 ```python
-count = await r.get(key)   # two requests both read 9
-if count < 10:             # both decide "allowed"
-    await r.incr(key)      # count becomes 11
+count = await r.get(key)  # two requests both read 9
+if count < 10:  # both decide "allowed"
+    await r.incr(key)  # count becomes 11
 ```
 
 Under load many requests read the same old value and all get through. One

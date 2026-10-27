@@ -34,10 +34,12 @@ MAX_BURST = 1_000_000
 MAX_GCRA_HORIZON_US = 10 * 86_400_000_000
 """GCRA keeps a timestamp up to interval * burst ahead of now; 10 days keeps it far below 2**53 us."""
 
+
 class InvalidPolicyError(ValueError):
     def __init__(self, errors: Sequence[str]) -> None:
         super().__init__("invalid policy: " + "; ".join(errors))
         self.errors = list(errors)
+
 
 def validate_name(name: str) -> None:
     # fullmatch, not match: in Python, "$" also matches just before a trailing
@@ -47,10 +49,12 @@ def validate_name(name: str) -> None:
             [f"name must match {NAME_PATTERN} (lowercase letters, digits, '.', '_', '-'; max 64 chars)"]
         )
 
+
 def gcra_interval(window_us: int, limit: int) -> int:
     """Microseconds of quota one unit costs in GCRA, rounded UP so the sustained
     rate can never exceed limit/window (rounding down would admit slightly more)."""
     return -(-window_us // limit)
+
 
 def normalize(algorithm: Algorithm, failure_mode: FailureMode | None, bands: Sequence[Band]) -> PolicySpec:
     """Return the spec with defaults filled in (failure mode OPEN, GCRA burst = limit),
@@ -69,6 +73,7 @@ def normalize(algorithm: Algorithm, failure_mode: FailureMode | None, bands: Seq
     if errors:
         raise InvalidPolicyError(errors)
     return PolicySpec(algorithm, failure_mode or FailureMode.OPEN, normalized)
+
 
 def _normalize_band(algorithm: Algorithm, band: Band, path: str, errors: list[str]) -> Band:
     max_limit = MAX_LOG_LIMIT if algorithm is Algorithm.SLIDING_WINDOW_LOG else MAX_LIMIT

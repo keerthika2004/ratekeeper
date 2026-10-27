@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from prometheus_client import CollectorRegistry, Counter, Enum, Histogram
 
+
 class Metrics:
     def __init__(self) -> None:
         self.registry = CollectorRegistry()

@@ -19,9 +19,11 @@ TimeSource = Callable[[], int | None]
 
 _VALUES_PER_BAND = 5
 
+
 def redis_server_time() -> int | None:
     """Production clock: always defer to Redis' clock. Tests pass a manual clock instead."""
     return None
+
 
 def load_script_sources() -> dict[Algorithm, str]:
     """One script per algorithm: prelude.lua followed by <algorithm>.lua."""
@@ -31,6 +33,7 @@ def load_script_sources() -> dict[Algorithm, str]:
         algorithm: prelude + "\n" + (lua / f"{algorithm.script_name}.lua").read_text(encoding="utf-8")
         for algorithm in Algorithm
     }
+
 
 class RedisRateLimiter:
     def __init__(self, client: redis.Redis, now_us: TimeSource = redis_server_time) -> None:
@@ -53,6 +56,7 @@ class RedisRateLimiter:
         for band in policy.bands:
             args += [str(band.limit), str(band.window_us), str(band.burst or 0)]
         return args
+
 
 def _parse(raw: list[int], band_count: int) -> Decision:
     if len(raw) != 1 + band_count * _VALUES_PER_BAND:

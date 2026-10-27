@@ -6,6 +6,7 @@ import pytest
 
 from ratekeeper.check.breaker import CircuitBreaker, CircuitOpenError, State
 
+
 class FakeClock:
     def __init__(self) -> None:
         self.now = 0.0
@@ -13,17 +14,22 @@ class FakeClock:
     def __call__(self) -> float:
         return self.now
 
+
 def counts(error: BaseException) -> bool:
     return isinstance(error, ConnectionError)
+
 
 async def ok() -> str:
     return "ok"
 
+
 async def outage() -> str:
     raise ConnectionError("redis down")
 
+
 async def bug() -> str:
     raise KeyError("bug")
+
 
 def make(clock: FakeClock, transitions: list[tuple[State, State]] | None = None) -> CircuitBreaker:
     return CircuitBreaker(
@@ -36,10 +42,12 @@ def make(clock: FakeClock, transitions: list[tuple[State, State]] | None = None)
         on_state_change=None if transitions is None else lambda old, new: transitions.append((old, new)),
     )
 
+
 async def fail(breaker: CircuitBreaker, times: int) -> None:
     for _ in range(times):
         with pytest.raises(ConnectionError):
             await breaker.call(outage, counts)
+
 
 async def test_opens_once_enough_recent_calls_fail() -> None:
     breaker = make(FakeClock())
@@ -52,6 +60,7 @@ async def test_opens_once_enough_recent_calls_fail() -> None:
     with pytest.raises(CircuitOpenError):
         await breaker.call(ok, counts)
 
+
 async def test_a_low_failure_rate_keeps_it_closed() -> None:
     breaker = make(FakeClock())
     for _ in range(3):
@@ -59,6 +68,7 @@ async def test_a_low_failure_rate_keeps_it_closed() -> None:
     await fail(breaker, 2)  # 2 of 5 = 40% < 50%
 
     assert breaker.state is State.CLOSED
+
 
 async def test_half_open_trials_close_it_again() -> None:
     clock = FakeClock()
@@ -78,6 +88,7 @@ async def test_half_open_trials_close_it_again() -> None:
         (State.HALF_OPEN, State.CLOSED),
     ]
 
+
 async def test_a_failed_trial_reopens_it() -> None:
     clock = FakeClock()
     breaker = make(clock)
@@ -89,6 +100,7 @@ async def test_a_failed_trial_reopens_it() -> None:
     assert breaker.state is State.OPEN
     with pytest.raises(CircuitOpenError):
         await breaker.call(ok, counts)
+
 
 async def test_errors_that_are_not_outages_pass_through_without_counting() -> None:
     breaker = make(FakeClock())

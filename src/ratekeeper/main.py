@@ -34,6 +34,7 @@ from ratekeeper.redis_limiter import RedisRateLimiter, TimeSource, redis_server_
 
 log = logging.getLogger(__name__)
 
+
 def create_app(settings: Settings | None = None, *, now_us: TimeSource = redis_server_time) -> FastAPI:
     """`now_us` exists for tests; production always uses Redis' clock."""
     settings = settings or Settings()
@@ -110,5 +111,6 @@ def create_app(settings: Settings | None = None, *, now_us: TimeSource = redis_s
 
     app.state.metrics = metrics
     return app
+
 
 app = create_app()

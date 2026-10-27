@@ -12,6 +12,7 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+
 def upgrade() -> None:
     op.execute(
         """
@@ -47,6 +48,7 @@ def upgrade() -> None:
         """
     )
     op.execute("CREATE INDEX policy_history_by_name ON policy_history (policy_name, id DESC)")
+
 
 def downgrade() -> None:
     op.execute("DROP TABLE policy_history")

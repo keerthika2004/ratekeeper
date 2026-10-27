@@ -21,9 +21,11 @@ from ratekeeper.policies.repository import Action, HistoryEntry
 
 _ONE_US = timedelta(microseconds=1)
 
+
 class _Strict(BaseModel):
     # Unknown fields are an error, so a typo like "limt" fails loudly instead of being ignored.
     model_config = ConfigDict(extra="forbid")
+
 
 class BandIn(_Strict):
     limit: int
@@ -36,6 +38,7 @@ class BandIn(_Strict):
             raise InvalidPolicyError([f"window must be a whole number of milliseconds: {self.window}"])
         return Band(self.limit, micros // 1000, self.burst)
 
+
 class BandOut(BaseModel):
     limit: int
     window: timedelta
@@ -45,6 +48,7 @@ class BandOut(BaseModel):
     def of(cls, band: Band) -> BandOut:
         return cls(limit=band.limit, window=timedelta(milliseconds=band.window_ms), burst=band.burst)
 
+
 class PolicyIn(_Strict):
     algorithm: Algorithm
     failure_mode: FailureMode | None = None
@@ -53,6 +57,7 @@ class PolicyIn(_Strict):
 
     def to_bands(self) -> list[Band]:
         return [band.to_band() for band in self.bands]
+
 
 class PolicyOut(BaseModel):
     name: str
@@ -70,6 +75,7 @@ class PolicyOut(BaseModel):
             failure_mode=policy.failure_mode,
             bands=[BandOut.of(band) for band in policy.bands],
         )
+
 
 class HistoryOut(BaseModel):
     version: int
@@ -90,6 +96,7 @@ class HistoryOut(BaseModel):
             changed_at=entry.changed_at,
         )
 
+
 class CheckIn(_Strict):
     """Callers name a policy; they can't send their own limits. Whoever owns the
     policy decides the limit, not whoever is being limited."""
@@ -104,6 +111,7 @@ class CheckIn(_Strict):
         if not value.strip():
             raise ValueError("must not be blank")
         return value
+
 
 class CheckOut(BaseModel):
     """Times are milliseconds, rounded up so a client that waits retry_after_ms is never early.
@@ -146,6 +154,7 @@ class CheckOut(BaseModel):
             reset_after_ms=ceil_div(band.reset_after_us, 1000),
             retry_after_ms=ceil_div(result.decision.retry_after_us, 1000),
         )
+
 
 def ceil_div(a: int, b: int) -> int:
     return -(-a // b)

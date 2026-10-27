@@ -4,6 +4,7 @@ from typing import Protocol
 
 from ratekeeper.core.models import Decision, Policy
 
+
 class RateLimiter(Protocol):
     """Checks a request against a policy and, if it fits, charges its cost.
 

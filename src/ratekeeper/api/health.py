@@ -18,13 +18,16 @@ from sqlalchemy import text
 
 router = APIRouter(prefix="/health")
 
+
 @router.get("/live")
 async def live() -> dict[str, str]:
     return {"status": "ok"}
 
+
 @router.get("/ready")
 async def ready() -> dict[str, str]:
     return {"status": "ok"}
+
 
 @router.get("")
 async def health(request: Request, response: Response) -> dict[str, Any]:
@@ -39,6 +42,7 @@ async def health(request: Request, response: Response) -> dict[str, Any]:
         "redis_circuit": state.breaker.state.value,
     }
 
+
 async def _redis_up(client: Any) -> bool:
     try:
         async with asyncio.timeout(1):
@@ -46,6 +50,7 @@ async def _redis_up(client: Any) -> bool:
         return True
     except Exception:
         return False
+
 
 async def _postgres_up(engine: Any) -> bool:
     try:

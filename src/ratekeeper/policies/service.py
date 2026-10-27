@@ -24,11 +24,13 @@ from ratekeeper.policies.repository import Action, HistoryEntry
 
 OnChange = Callable[[str], Awaitable[None]]
 
+
 @dataclass(frozen=True, slots=True)
 class PutResult:
     policy: Policy
     created: bool
     changed: bool
+
 
 class PolicyService:
     def __init__(self, engine: AsyncEngine, on_change: OnChange) -> None:
@@ -58,9 +60,7 @@ class PolicyService:
             version = max(await repository.highest_version_ever(conn, name), previous) + 1
             policy = Policy(name, version, spec)
             await repository.save(conn, policy)
-            await repository.append_history(
-                conn, policy, Action.CREATED if current is None else Action.UPDATED
-            )
+            await repository.append_history(conn, policy, Action.CREATED if current is None else Action.UPDATED)
 
         # Only now, after the commit. Announcing earlier could let another
         # request reload the old row and cache it again.
@@ -93,10 +93,12 @@ class PolicyService:
         async with self._engine.connect() as conn:
             return await repository.history(conn, name, limit)
 
+
 async def load_policy(engine: AsyncEngine, name: str) -> Policy | None:
     """The policy cache's loader."""
     async with engine.connect() as conn:
         return await repository.find(conn, name)
+
 
 def _check_version(name: str, if_match: int | None, current: Policy | None) -> None:
     if if_match is None:

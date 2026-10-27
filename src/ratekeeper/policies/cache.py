@@ -38,10 +38,12 @@ CHANNEL = "ratekeeper:policy-changed"
 
 Loader = Callable[[str], Awaitable[Policy | None]]
 
+
 @dataclass(slots=True)
 class _Entry:
     value: Policy | None
     loaded_at: float
+
 
 class PolicyCache:
     def __init__(
@@ -111,6 +113,7 @@ class PolicyCache:
             # was "never retrieved" when nobody was waiting (background refresh).
             log.warning("Loading policy %r failed; keeping any cached copy", name, exc_info=task.exception())
 
+
 async def publish_change(client: redis.Redis, name: str) -> None:
     """Tell every instance that `name` changed. Best effort: on failure, the
     other instances still catch up at their next background refresh."""
@@ -118,6 +121,7 @@ async def publish_change(client: redis.Redis, name: str) -> None:
         await client.publish(CHANNEL, name)
     except (RedisError, OSError):
         log.warning("Could not broadcast change of policy %r", name, exc_info=True)
+
 
 async def listen_for_changes(client: redis.Redis, cache: PolicyCache, retry_seconds: float = 1.0) -> None:
     """Runs for the app's lifetime: drop cached policies that other instances changed.

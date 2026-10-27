@@ -17,6 +17,7 @@ from ratekeeper.main import create_app
 
 pytestmark = pytest.mark.integration
 
+
 @pytest.fixture
 async def api(redis_url: str, database_url: str) -> AsyncIterator[httpx.AsyncClient]:
     app = create_app(Settings(redis_url=redis_url, database_url=database_url))
@@ -26,15 +27,19 @@ async def api(redis_url: str, database_url: str) -> AsyncIterator[httpx.AsyncCli
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
             yield client
 
+
 def fixed_window(limit: int) -> dict[str, Any]:
     return {"algorithm": "FIXED_WINDOW", "bands": [{"limit": limit, "window": "PT1H"}]}
+
 
 async def put(api: httpx.AsyncClient, name: str, body: dict[str, Any], if_match: str | None = None) -> httpx.Response:
     headers = {"If-Match": if_match} if if_match else {}
     return await api.put(f"/v1/policies/{name}", json=body, headers=headers)
 
+
 async def check(api: httpx.AsyncClient, policy: str, identity: str, cost: int = 1) -> httpx.Response:
     return await api.post("/v1/check", json={"policy": policy, "identity": identity, "cost": cost})
+
 
 async def test_policy_lifecycle_is_versioned_and_audited(api: httpx.AsyncClient) -> None:
     created = await put(api, "lifecycle", fixed_window(10))
@@ -65,6 +70,7 @@ async def test_policy_lifecycle_is_versioned_and_audited(api: httpx.AsyncClient)
     assert recreated.status_code == 201
     assert recreated.json()["version"] == 3
 
+
 async def test_checks_consume_quota_then_report_rejection(api: httpx.AsyncClient) -> None:
     await put(api, "three-per-hour", fixed_window(3))
 
@@ -86,6 +92,7 @@ async def test_checks_consume_quota_then_report_rejection(api: httpx.AsyncClient
     # Another identity has its own quota.
     assert (await check(api, "three-per-hour", "bob")).json()["allowed"] is True
 
+
 async def test_policy_changes_apply_to_the_very_next_check(api: httpx.AsyncClient) -> None:
     await put(api, "changing", fixed_window(1))
     assert (await check(api, "changing", "carol")).json()["allowed"] is True
@@ -96,6 +103,7 @@ async def test_policy_changes_apply_to_the_very_next_check(api: httpx.AsyncClien
     response = await check(api, "changing", "carol")
     assert response.json()["allowed"] is True
     assert response.json()["limit"] == 5
+
 
 async def test_invalid_input_gets_a_clear_problem_response(api: httpx.AsyncClient) -> None:
     bad_burst = {"algorithm": "FIXED_WINDOW", "bands": [{"limit": 5, "window": "PT1S", "burst": 2}]}
@@ -113,6 +121,7 @@ async def test_invalid_input_gets_a_clear_problem_response(api: httpx.AsyncClien
     await put(api, "small", fixed_window(5))
     assert (await check(api, "small", "dave", cost=6)).status_code == 422
     assert (await check(api, "small", "")).status_code == 422
+
 
 async def test_metrics_and_health_are_exposed(api: httpx.AsyncClient) -> None:
     await put(api, "metered", fixed_window(5))

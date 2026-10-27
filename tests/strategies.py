@@ -17,6 +17,7 @@ from ratekeeper.core.rules import normalize
 IDENTITIES = ["user-1", "user-2", "{evil}:tag", "ünïcødé 🚀"]
 """Includes characters that would break Redis keys if they weren't encoded."""
 
+
 @dataclass(frozen=True, slots=True)
 class Step:
     """One request in a scenario. raw_cost is reduced into [1, policy.max_cost]
@@ -33,6 +34,7 @@ class Step:
     def cost(self, policy: Policy) -> int:
         return 1 + (self.raw_cost - 1) % policy.max_cost
 
+
 def _bands(algorithm: Algorithm) -> st.SearchStrategy[Band]:
     return st.builds(
         lambda limit, window_ms, burst, explicit: Band(
@@ -44,11 +46,13 @@ def _bands(algorithm: Algorithm) -> st.SearchStrategy[Band]:
         st.booleans(),
     )
 
+
 @st.composite
 def policies(draw: st.DrawFn, max_bands: int = 3) -> Policy:
     algorithm = draw(st.sampled_from(Algorithm))
     bands = draw(st.lists(_bands(algorithm), min_size=1, max_size=max_bands))
     return Policy("prop", 1, normalize(algorithm, None, bands))
+
 
 _advance = st.one_of(
     st.just(0),  # same instant
@@ -58,6 +62,4 @@ _advance = st.one_of(
 )
 _cost = st.one_of(st.just(1), st.integers(1, 1_000))
 
-scenarios = st.lists(
-    st.builds(Step, _advance, st.integers(0, len(IDENTITIES) - 1), _cost), min_size=1, max_size=60
-)
+scenarios = st.lists(st.builds(Step, _advance, st.integers(0, len(IDENTITIES) - 1), _cost), min_size=1, max_size=60)

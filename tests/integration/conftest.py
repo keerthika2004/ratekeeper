@@ -20,10 +20,12 @@ from testcontainers.redis import RedisContainer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
+
 @pytest.fixture(scope="session")
 def redis_url() -> Iterator[str]:
     with RedisContainer("redis:7.4-alpine") as container:
         yield f"redis://{container.get_container_host_ip()}:{container.get_exposed_port(6379)}/0"
+
 
 @pytest.fixture(scope="session")
 def database_url() -> Iterator[str]:
@@ -34,6 +36,7 @@ def database_url() -> Iterator[str]:
         config.attributes["database_url"] = url
         command.upgrade(config, "head")
         yield url
+
 
 @pytest.fixture
 async def redis_client(redis_url: str) -> AsyncIterator[redis.Redis]:

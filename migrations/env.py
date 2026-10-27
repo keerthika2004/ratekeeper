@@ -24,10 +24,12 @@ if config.config_file_name is not None:
 # Arbitrary constant: the lock id all migration runs agree on.
 MIGRATION_LOCK_ID = 7_265_412
 
+
 def database_url() -> str:
     # Tests pass the URL programmatically; everyone else uses the app's setting.
     url = config.attributes.get("database_url")
     return str(url) if url else Settings().database_url
+
 
 def run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=None)
@@ -35,11 +37,13 @@ def run_migrations(connection: Connection) -> None:
         connection.execute(text(f"SELECT pg_advisory_xact_lock({MIGRATION_LOCK_ID})"))
         context.run_migrations()
 
+
 async def run_online() -> None:
     engine = create_async_engine(database_url())
     async with engine.connect() as connection:
         await connection.run_sync(run_migrations)
     await engine.dispose()
+
 
 if context.is_offline_mode():
     context.configure(url=database_url(), literal_binds=True)

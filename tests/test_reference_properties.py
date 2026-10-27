@@ -23,6 +23,7 @@ from tests.support import ManualClock
 
 MANY = settings(max_examples=500, deadline=None)
 
+
 @MANY
 @given(policies(), scenarios)
 def test_never_admits_more_than_the_algorithm_allows(policy: Policy, steps: list[Step]) -> None:
@@ -38,6 +39,7 @@ def test_never_admits_more_than_the_algorithm_allows(policy: Policy, steps: list
     for history in admitted.values():
         for band in policy.bands:
             _assert_within_guarantee(policy.algorithm, band, history)
+
 
 def _assert_within_guarantee(algorithm: Algorithm, band: Band, history: list[tuple[int, int]]) -> None:
     match algorithm:
@@ -63,6 +65,7 @@ def _assert_within_guarantee(algorithm: Algorithm, band: Band, history: list[tup
                     span = history[j][0] - history[i][0]
                     assert units * interval <= band.burst * interval + span
 
+
 @MANY
 @given(policies(), scenarios)
 def test_retry_after_is_exact(policy: Policy, steps: list[Step]) -> None:
@@ -79,6 +82,7 @@ def test_retry_after_is_exact(policy: Policy, steps: list[Step]) -> None:
         assert retry > 0
         assert model.copy(ManualClock(now + retry)).check(policy, step.identity, cost).allowed
         assert not model.copy(ManualClock(now + retry - 1)).check(policy, step.identity, cost).allowed
+
 
 @MANY
 @given(policies(max_bands=1), scenarios)
@@ -99,6 +103,7 @@ def test_reset_after_is_exact(policy: Policy, steps: list[Step]) -> None:
             early = model.copy(ManualClock(now + reset - 1)).check(policy, step.identity, 1)
             assert not early.allowed or early.bands[0].remaining < band.limit - 1
 
+
 @MANY
 @given(policies(), scenarios)
 def test_rejections_change_nothing(policy: Policy, steps: list[Step]) -> None:
@@ -111,6 +116,7 @@ def test_rejections_change_nothing(policy: Policy, steps: list[Step]) -> None:
         decision = model.check(policy, step.identity, cost)
         if not decision.allowed:
             assert model.check(policy, step.identity, cost) == decision
+
 
 @MANY
 @given(policies(), scenarios)

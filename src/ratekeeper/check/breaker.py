@@ -24,13 +24,16 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 class State(StrEnum):
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"
 
+
 class CircuitOpenError(Exception):
     """The breaker is open: the call was not attempted."""
+
 
 class CircuitBreaker:
     def __init__(
@@ -65,9 +68,7 @@ class CircuitBreaker:
     def state(self) -> State:
         return self._state
 
-    async def call(
-        self, operation: Callable[[], Awaitable[T]], is_failure: Callable[[BaseException], bool]
-    ) -> T:
+    async def call(self, operation: Callable[[], Awaitable[T]], is_failure: Callable[[BaseException], bool]) -> T:
         """Run `operation` unless the breaker is open. Only exceptions for which
         `is_failure` is true count against the breaker; others propagate untouched."""
         generation = self._before_call()

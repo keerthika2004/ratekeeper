@@ -22,12 +22,14 @@ from tests.support import ManualClock
 
 pytestmark = pytest.mark.integration
 
+
 # Hypothesis runs plain (sync) test functions, so each example drives its own
 # short-lived event loop with asyncio.run().
 @settings(max_examples=300, deadline=None)
 @given(policy=policies(), steps=scenarios)
 def test_lua_scripts_match_the_reference_model(redis_url: str, policy: Policy, steps: list[Step]) -> None:
     asyncio.run(_compare(redis_url, policy, steps))
+
 
 async def _compare(redis_url: str, policy: Policy, steps: list[Step]) -> None:
     client = redis.from_url(redis_url)

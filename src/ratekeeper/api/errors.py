@@ -22,13 +22,16 @@ from ratekeeper.errors import CostExceedsCapacityError, PolicyNotFoundError, Ver
 
 log = logging.getLogger(__name__)
 
+
 class InvalidIfMatchError(ValueError):
     def __init__(self, header: str) -> None:
         super().__init__(f'If-Match must be a policy version such as "3", got: {header}')
 
+
 def problem(status: HTTPStatus, detail: str, **extra: Any) -> JSONResponse:
     body = {"type": "about:blank", "title": status.phrase, "status": status.value, "detail": detail, **extra}
     return JSONResponse(body, status_code=status.value, media_type="application/problem+json")
+
 
 def install_error_handlers(app: FastAPI) -> None:
     def simple(status: HTTPStatus) -> Any:
