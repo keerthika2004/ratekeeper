@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     if Redis hasn't answered in 100 ms, the policy's failure mode is a better answer
     than making the caller wait."""
     redis_connect_timeout_seconds: float = 1.0
+    redis_max_connections: int = 50
+    """Size of the check path's connection pool. When all are busy, a check waits 
+    for a free one (still bounded by redis_timeout_seconds) instead of failing."""
 
     policy_cache_max_size: int = 10_000
     policy_cache_refresh_after_seconds: float = 30

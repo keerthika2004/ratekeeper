@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 import pytest
+from prometheus_client.parser import text_string_to_metric_families
 
 from ratekeeper.config import Settings
 from ratekeeper.main import create_app
@@ -122,15 +123,25 @@ async def test_invalid_input_gets_a_clear_problem_response(api: httpx.AsyncClien
     assert (await check(api, "small", "dave", cost=6)).status_code == 422
     assert (await check(api, "small", "")).status_code == 422
 
+def sample_value(metrics_text: str, name: str, labels: dict[str, str]) -> float | None:
+   """Read one value from Prometheus text output (parsed, not string-matched)."""
+   for family in text_string_to_metric_families(metrics_text):
+       for sample in family.samples:
+           if sample.name == name and sample.labels == labels:
+               return sample.value
+   return None
+
 
 async def test_metrics_and_health_are_exposed(api: httpx.AsyncClient) -> None:
-    await put(api, "metered", fixed_window(5))
-    await check(api, "metered", "erin")
+   await put(api, "metered", fixed_window(5))
+   checked = (await check(api, "metered", "erin")).json()
+   assert checked["allowed"] is True
+   assert checked["degraded"] is False
 
-    metrics = await api.get("/metrics")
-    assert metrics.status_code == 200
-    assert 'ratekeeper_checks_total{policy="metered",outcome="allowed"} 1.0' in metrics.text
-
-    health = await api.get("/health")
-    assert health.status_code == 200
-    assert health.json() == {"status": "ok", "redis": "up", "postgres": "up", "redis_circuit": "closed"}
+   metrics = await api.get("/metrics")
+   assert metrics.status_code == 200
+   labels = {"policy": "metered", "outcome": "allowed"}
+   assert sample_value(metrics.text, "ratekeeper_checks_total", labels) == 1.0
+   health = await api.get("/health")
+   assert health.status_code == 200
+   assert health.json() == {"status": "ok", "redis": "up", "postgres": "up", "redis_circuit": "closed"}

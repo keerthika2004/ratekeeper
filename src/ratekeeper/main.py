@@ -43,11 +43,19 @@ def create_app(settings: Settings | None = None, *, now_us: TimeSource = redis_s
     @contextlib.asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Check path: short timeouts, so a slow Redis can't hold requests hostage.
-        redis_client = redis.from_url(
-            settings.redis_url,
-            socket_timeout=settings.redis_timeout_seconds,
-            socket_connect_timeout=settings.redis_connect_timeout_seconds,
+        
+        # A *blocking* pool: in a burst, checks queue for a free connection
+        # instead of failing with "Too many connections", which would look like
+        # a Redis outage and push every policy into its failure mode.
+        redis_client = redis.Redis.from_pool(
+            redis.BlockingConnectionPool.from_url(
+                settings.redis_url,
+                max_connections=settings.redis_max_connections,
+                socket_timeout = settings.redis_timeout_seconds,
+                socket_connect_timeout = settings.redis_connect_timeout_seconds,
+            )
         )
+
         # Subscriptions sit idle between messages, so they need a connection
         # without the 100 ms read timeout (health checks keep it honest instead).
         pubsub_client = redis.from_url(

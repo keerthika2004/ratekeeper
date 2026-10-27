@@ -15,8 +15,8 @@ import pytest
 import redis.asyncio as redis
 from alembic import command
 from alembic.config import Config
-from testcontainers.postgres import PostgresContainer
-from testcontainers.redis import RedisContainer
+from testcontainers.community.postgres import PostgresContainer
+from testcontainers.community.redis import RedisContainer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -40,7 +40,13 @@ def database_url() -> Iterator[str]:
 
 @pytest.fixture
 async def redis_client(redis_url: str) -> AsyncIterator[redis.Redis]:
-    client = redis.from_url(redis_url)
+    # Same kind of pool as production (see main.py): bursts wait for a connection.
+    client = redis.Redis.from_pool(
+        redis.BlockingConnectionPool.from_url(
+            redis_url,
+            max_connections=50,
+        )
+    )
     await client.flushdb()
     yield client
     await client.aclose()
