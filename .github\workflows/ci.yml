@@ -1,0 +1,39 @@
+# Lint, type-check and run every test (unit + integration) on each push and PR.
+
+# GitHub's Ubuntu runners have Docker, so Testcontainers can start the real
+
+# Redis and Postgres the integration tests need.
+
+#
+
+# Note: this workflow lives inside ratekeeper-python/. GitHub only reads
+
+# workflows from .github/ at the repository root, so if this folder isn't the
+
+# root of its own repository, move this file there and add
+
+# `working-directory: ratekeeper-python` to the steps.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Lint
+        run: uv run ruff check
+      - name: Type-check
+        run: uv run mypy
+      - name: Tests (unit + integration)
+        run: uv run pytest
+
+
+ 

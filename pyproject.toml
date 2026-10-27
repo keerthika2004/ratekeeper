@@ -1,0 +1,56 @@
+[project]
+name = "ratekeeper"
+version = "0.1.0"
+description = "Distributed rate limiter backed by Redis, with exact integer math and a reference model"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+   "fastapi>=0.115",
+   "uvicorn[standard]>=0.32",
+   "pydantic>=2.9",
+   "pydantic-settings>=2.6",
+   "redis>=5.2",
+   "sqlalchemy[asyncio]>=2.0.36",
+   "asyncpg>=0.30",
+   "alembic>=1.14",
+   "prometheus-client>=0.21",
+]
+
+[dependency-groups]
+dev = [
+   "pytest>=8.3",
+   "pytest-asyncio>=0.24",
+   "hypothesis>=6.115",
+   "httpx>=0.28",
+   "testcontainers[redis,postgres]>=4.8",
+   "ruff>=0.8",
+   "mypy>=1.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ratekeeper"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+   "integration: needs Docker (real Redis/Postgres via Testcontainers). Deselect with -m 'not integration'.",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+ 
