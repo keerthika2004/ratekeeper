@@ -79,6 +79,19 @@ Optional `"cost": 10` consumes 10 units at once.
 curl -X PUT localhost:8000/v1/policies/login -H 'If-Match: "1"' -H 'Content-Type: application/json' -d '...'
 ```
 
+### From a Python / FastAPI app
+The [`ratekeeper-client`](clients/python/README.md) package (in `clients/python`) does the HTTP call, forwards the headers and returns 429 for you:
+```python
+from ratekeeper_client import Ratekeeperclient 
+from ratekeeper_client.fastapi import rate_limit
+
+limiter = RateKeeperClient("http://localhost:8000")
+
+@app.post("/login", dependencies =[Depends(rate_limit(limiter, "login"))])
+async def login(): ...
+```
+A runnable demo: [examples/demo_app.py](examples/demo_app.py).
+
 ### Endpoints
 
 | Method | Path | |
@@ -137,6 +150,8 @@ src/ratekeeper/
   api/             FastAPI routes, request/response models, error mapping, health
   main.py          app factory: wires everything at startup
   config.py        settings from environment variables
+clients/python/     ratekeeper-client: async client + FastAPI dependency and middleware (separate package)
+examples/           demo_app.py (protected by the client)
 migrations/        Alembic migrations
 tests/             unit tests, reference model, Hypothesis strategies
 tests/integration/ tests against real Redis/Postgres (Docker)

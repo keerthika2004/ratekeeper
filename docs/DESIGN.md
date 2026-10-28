@@ -374,18 +374,38 @@ to choose to skip them; a missing Docker daemon can never quietly produce a gree
 
 ---
 
-## 19. Compared with the project that inspired this
+## 19. The Python client (`clients/python`)
 
-| Problem in the original | What ratekeeper does |
-|---|---|
-| Floats and `tostring()` lose timestamp precision | Integer microseconds, `string.format('%d')` |
-| Sliding-log entries named with `math.random()`, which repeats, so entries overwrite each other | Per-identity sequence counter |
-| GCRA `remaining` off by one | One formula, proven exact by property tests |
-| Counters keyed by algorithm + identity, so policies share counters | Policy name + version in the key |
-| Policy looked up in Postgres on every check | In-memory cache with pub/sub invalidation |
-| Idempotency check-then-write race | PUT semantics + advisory lock + If-Match |
-| Alerter claimed crash recovery but never re-read pending entries | Standard metrics and alert rules |
-| Hand-rolled sharding, and the gRPC path ignored it | One code path; keys designed for Redis Cluster via hash tags (cluster test on the roadmap) |
-| Schema created at startup by every instance | Alembic migrations as a separate step, with a lock |
-| No defined behaviour when Redis is down | Timeout + circuit breaker + per-policy failure mode |
-| Example tests only | Reference model, property tests, model-vs-Redis equivalence |
+**Separate package, same repo.** An app that only *calls* ratekeeper shouldn't
+install SQLAlchemy, asyncpg and Alembic. `ratekeeper-client` depends on `httpx` only
+(plus FastAPI for the integration). A **uv workspace** keeps both packages in one
+repo with one lock file.
+
+**Two failure kinds, two behaviours:**
+- *ratekeeper unreachable* (down, timeout, 5xx): an infrastructure problem, so a
+ setting decides: allow (default), deny, or raise. It's the same idea as the
+ server's per-policy failure mode, one level further out.
+- *ratekeeper answers 4xx* (unknown policy, bad input): a bug in the calling app,
+ so it always raises. Silently allowing would hide a misspelled policy name forever.
+
+**250 ms timeout:** ratekeeper's own Redis timeout is 100 ms; the rest is network
+headroom. A sick limiter must not make every request in the calling app slow.
+
+**Dependency *and* middleware:**
+- The **dependency** (`rate_limit(...)`) is per route: each route picks its policy,
+ cost, and who is being limited (user id, API key...). That's usually what you want.
+- The **middleware** applies one policy to the whole app, skipping health and docs paths.
+
+**Identity is the caller's choice.** The default is the client IP, with a clear
+warning: behind a load balancer every user would share the balancer's IP, and
+`X-Forwarded-For` can be faked unless a trusted proxy sets it.
+
+**Headers on success too.** Allowed responses carry `X-RateLimit-*`, so
+well-behaved clients can slow down before they're rejected.
+
+**Tested twice:** against a fake ratekeeper (`httpx.MockTransport`) for every
+branch, and end to end (`test_client_e2e.py`): demo app → client → real ratekeeper
+→ real Redis and Postgres.
+
+---
+

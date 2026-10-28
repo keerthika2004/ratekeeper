@@ -25,7 +25,18 @@ dev = [
     "testcontainers[redis,postgres]>=4.8",
     "ruff>=0.8",
     "mypy>=1.13",
+    "ratekeeper_client[fastapi]",
 ]
+
+# The client library lives in clients/python as its own package (apps using it
+# shouldn't need the server's dependencies). A uv workspace keeps both in one
+# repo with one lock file, and installs the client into the dev environment so
+# the tests can use it.
+[tool.uv.workspace]
+members = ["clients/python"]
+
+[tool.uv.sources]
+ratekeeper-client = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
@@ -51,5 +62,6 @@ select = ["E", "F", "I", "B", "UP", "ASYNC", "RUF"]
 
 [tool.mypy]
 strict = true
-files = ["src"]
+files = ["src", "clients/python/src"]
+mypy_path = ["src", "clients/python/src"]
 plugins = ["pydantic.mypy"]

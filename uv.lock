@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.15'",
 ]
 
+[manifest]
+members = [
+    "ratekeeper",
+    "ratekeeper-client",
+]
+
 [[package]]
 name = "alembic"
 version = "1.20.1"
@@ -1263,6 +1269,7 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "ratekeeper-client", extra = ["fastapi"] },
     { name = "ruff" },
     { name = "testcontainers", extra = ["redis"] },
 ]
@@ -1287,9 +1294,30 @@ dev = [
     { name = "mypy", specifier = ">=1.13" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "ratekeeper-client", extras = ["fastapi"], editable = "clients/python" },
     { name = "ruff", specifier = ">=0.8" },
     { name = "testcontainers", extras = ["redis", "postgres"], specifier = ">=4.8" },
 ]
+
+[[package]]
+name = "ratekeeper-client"
+version = "0.1.0"
+source = { editable = "clients/python" }
+dependencies = [
+    { name = "httpx" },
+]
+
+[package.optional-dependencies]
+fastapi = [
+    { name = "fastapi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.28" },
+]
+provides-extras = ["fastapi"]
 
 [[package]]
 name = "redis"

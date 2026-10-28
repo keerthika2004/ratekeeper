@@ -1,0 +1,19 @@
+[project]
+name = "ratekeeper-client"
+version = "0.1.0"
+description = "Async Python client and FastAPI integration for the ratekeeper rate limiter"
+readme = "README.md"
+requires-python = ">=3.12"
+# Only httpx: apps using the client don't need any of the server's dependencies.
+dependencies = ["httpx>=0.28"]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.115"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ratekeeper_client"]
+ 

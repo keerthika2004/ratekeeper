@@ -9,7 +9,10 @@ WORKDIR /app
 # uv.lock change, not on every code edit. (uv.lock* is optional until the
 # first `uv lock`; commit it so builds are reproducible.)
 COPY pyproject.toml uv.lock* README.md ./
-RUN uv sync --no-dev --no-install-project
+# uv needs every workspace member's pyproject.toml to read the workspace, even
+# though the server image doesn't install the client.
+COPY clients/python/pyproject.toml clients/python/README.md clients/python/
+RUN uv sync --no-dev --no-install-workspace
 COPY src src
 RUN uv sync --no-dev --no-editable
 
