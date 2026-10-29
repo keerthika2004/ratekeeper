@@ -39,7 +39,7 @@ class FailingLimiter:
 
 
 def service(limiter: object, metrics: Metrics | None = None) -> CheckService:
-    breaker = CircuitBreaker(window_size=20, minimum_calls=10, failure_rate_threshold=0.5, open_seconds=60)
+    breaker = CircuitBreaker(window_seconds=10, minimum_calls=10, failure_rate_threshold=0.5, open_seconds=60)
     return CheckService(Lookup(), limiter, breaker, metrics or Metrics(), timeout_seconds=1)  # type: ignore[arg-type]
 
 

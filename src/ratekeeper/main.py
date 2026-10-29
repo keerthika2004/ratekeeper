@@ -70,8 +70,8 @@ def create_app(settings: Settings | None = None, *, now_us: TimeSource = redis_s
             metrics.circuit_state.state(new.value)
 
         breaker = CircuitBreaker(
-            failure_rate_threshold=settings.breaker_failure_rate_threshold,
-            window_size=settings.breaker_window_size,
+            failure_rate_threshold=settings.breaker_failure_rate_threshold,     
+            window_seconds=settings.breaker_window_seconds,
             minimum_calls=settings.breaker_minimum_calls,
             open_seconds=settings.breaker_open_seconds,
             half_open_calls=settings.breaker_half_open_calls,

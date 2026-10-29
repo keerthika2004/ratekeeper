@@ -31,7 +31,15 @@ class Settings(BaseSettings):
     policy_cache_expire_after_seconds: float = 3600
 
     breaker_failure_rate_threshold: float = 0.5
-    breaker_window_size: int = 20
-    breaker_minimum_calls: int = 10
+    breaker_window_seconds: int = 10
+    """Failure rate is judged over this much recent time (not a number of calls),
+    so a brief stall under heavy traffic doesn't look like an outage."""
+    breaker_minimum_calls: int = 20
     breaker_open_seconds: float = 5
     breaker_half_open_calls: int = 3
+
+
+    
+ 
+
+
